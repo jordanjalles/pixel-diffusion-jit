@@ -1,0 +1,24 @@
+{
+ "xm_k": 1,
+ "xm_n": 1,
+ "steps": 100000,
+ "log_every": 100,
+ "eval_every": 2000,
+ "preview_every": 10000,
+ "ckpt_every": 25000,
+ "compile": true,
+ "yield_gpu": true,
+ "notebook_commit": "5eb53a0",
+ "loader_workers": 4,
+ "disk_lock": true,
+ "draft_decode": true,
+ "hparams": {
+  "SHARDS_IN_RAM": 1,
+  "keep_ratio": 0.25,
+  "n_loops": 4,
+  "sparse_per_dense": 4,
+  "use_xsa": false
+ },
+ "run_type": "pixel_loop",
+ "loop": true
+}

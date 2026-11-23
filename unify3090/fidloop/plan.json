@@ -1,0 +1,307 @@
+{
+ "note": "Decision tree of fid_loop.py. change = patch of the job config (merged into the parent's config). pass = next node if the FID beats the control by more than the margin (the change is kept), fail = next node if not (the change is dropped). No node adds a model parameter. follower_only = the node runs only when another node names it. A null follower = the first node of this file that has not run.",
+ "start": "ema_teacher",
+ "nodes": {
+  "ema_teacher": {
+   "why": "Teacher pass with averaged weights (decay 0.999) in place of the trained weights, as in JEPA and self-flow",
+   "change": {
+    "selfflow": {
+     "teacher": "ema"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "ema_teacher_slow": {
+   "why": "Slower averaged teacher: decay 0.9999 in place of 0.999",
+   "change": {
+    "selfflow": {
+     "teacher_decay": 0.9999
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "noisy_half": {
+   "why": "Half of the patches at the higher noise level in place of a quarter: a harder student task",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.5
+    }
+   },
+   "pass": "noisy_three_quarters",
+   "fail": null
+  },
+  "noisy_three_quarters": {
+   "why": "Three quarters of the patches at the higher noise level, on top of the gain from one half",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.75
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "noisy_eighth": {
+   "why": "One eighth of the patches at the higher noise level: the opposite direction, after one half failed",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.125
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "teach_weight_2": {
+   "why": "Teaching term at weight 2 in place of 1",
+   "change": {
+    "selfflow": {
+     "weight": 2.0
+    }
+   },
+   "pass": "teach_weight_4",
+   "fail": null
+  },
+  "teach_weight_4": {
+   "why": "Teaching term at weight 4, on top of the gain from weight 2",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "teach_weight_half": {
+   "why": "Teaching term at weight 0.5: the opposite direction, after weight 2 failed",
+   "change": {
+    "selfflow": {
+     "weight": 0.5
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "block_layout": {
+   "why": "The noisier patches form one rectangle per image (I-JEPA target block) in place of spread patches: the student must use far context",
+   "change": {
+    "selfflow": {
+     "noisy_layout": "block"
+    }
+   },
+   "pass": "block_half",
+   "fail": null
+  },
+  "block_half": {
+   "why": "A rectangle of half the image at the higher noise level, on top of the gain from the block layout",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.5
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "teach_noisy_only": {
+   "why": "The teaching term counts only the noisier patches (JEPA: predict the hidden part), not the context patches",
+   "change": {
+    "selfflow": {
+     "teach_on": "noisy"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "pair_early": {
+   "why": "Teaching from block 6 into block 2 in place of block 3: an earlier student layer",
+   "change": {
+    "selfflow": {
+     "pairs": [
+      [
+       2,
+       6
+      ]
+     ]
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "pair_last": {
+   "why": "Teaching from the last block (8) into block 4: later layers on both sides, after the earlier student layer failed",
+   "change": {
+    "selfflow": {
+     "pairs": [
+      [
+       4,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "weight_logflip": {
+   "why": "Flipped log loss weight in place of the clamp weight: it ended 3.0 FID below the control in the full run without teaching",
+   "change": {
+    "loss_weight": "logflip"
+   },
+   "pass": null,
+   "fail": null
+  },
+  "sample_ema_slow": {
+   "why": "Averaged weights for sampling with decay 0.9995 in place of 0.999: a longer average, no change of training",
+   "change": {
+    "ema": 0.9995
+   },
+   "pass": null,
+   "fail": null
+  },
+  "sample_ema_fast": {
+   "why": "Averaged weights for sampling with decay 0.998: a shorter average, after the longer one failed",
+   "change": {
+    "ema": 0.998
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "readouts_half": {
+   "why": "Half the weight on the low-resolution readout losses: more of the gradient goes to the final image",
+   "change": {
+    "hparams": {
+     "pyramid_weight": 0.5
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "readouts_double": {
+   "why": "Double weight on the low-resolution readout losses, after half failed",
+   "change": {
+    "hparams": {
+     "pyramid_weight": 2.0
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "no_teaching": {
+   "why": "Sensitivity test: the teaching term off (mixed noise only). If the FID does not rise, 16,000 steps cannot show the value of teaching",
+   "change": {
+    "selfflow": {
+     "teacher": false
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "ema_teacher_fast": {
+   "why": "Faster averaged teacher: decay 0.99 in place of 0.999, between the trained weights and the kept setting",
+   "change": {
+    "selfflow": {
+     "teacher_decay": 0.99
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "teach_half_noisy": {
+   "why": "Two weak gains together: teaching weight 0.5 (124.31) and teaching on the noisier patches only (124.43)",
+   "change": {
+    "selfflow": {
+     "weight": 0.5,
+     "teach_on": "noisy"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "out_align_half": {
+   "why": "View alignment at the output: the student's final image is also pulled to the averaged teacher's final image (weight 0.5). The teacher sees less noise",
+   "change": {
+    "selfflow": {
+     "out_weight": 0.5
+    }
+   },
+   "pass": "out_align_2",
+   "fail": "out_align_tenth"
+  },
+  "out_align_2": {
+   "why": "Output alignment at weight 2, on top of the gain from weight 0.5",
+   "change": {
+    "selfflow": {
+     "out_weight": 2.0
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "out_align_tenth": {
+   "why": "Output alignment at weight 0.1, after weight 0.5 failed",
+   "change": {
+    "selfflow": {
+     "out_weight": 0.1
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "no_mixed_noise": {
+   "why": "Ablation: no noisier patches (student and averaged teacher see the same image). Is the gain from the averaged teacher alone?",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.0
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "ema_clean_teacher": {
+   "why": "The averaged teacher sees the clean image. With the trained weights as teacher this changed little on the 3090 (127.67 against 126.78)",
+   "change": {
+    "selfflow": {
+     "teacher_input": "clean"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "teach_weight_quarter": {
+   "why": "Teaching weight 0.25: the weight tests fall slowly with the weight (2: 124.64, 1: 124.39, 0.5: 124.31)",
+   "change": {
+    "selfflow": {
+     "weight": 0.25
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "ema_deep_target": {
+   "why": "The averaged teacher gives the target from the last block (8) to block 3. With the trained weights as teacher this cost 0.8 on the 3090",
+   "change": {
+    "selfflow": {
+     "pairs": [
+      [
+       3,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": null,
+   "fail": null
+  }
+ }
+}

@@ -1,0 +1,271 @@
+{
+ "note": "Round 2 of the FID loop (user, 2026-10-10): self-teaching with the model as its own judge (job cfg selfteach), 20-minute cycles, equal compute. Every run starts from the baseline checkpoint with base_change. A node trains base_steps / cost steps. change = patch of the job config. pass = next node if the FID beats the reference by more than the margin (the change is kept), fail = next node if not (the change is dropped). follower_only = runs only when another node names it. No node adds a model parameter.",
+ "base_change": {
+  "selfflow": {
+   "teacher": "ema"
+  }
+ },
+ "base_steps": 20000,
+ "start": "st_z6",
+ "nodes": {
+  "st_z6": {
+   "why": "Self-teaching, z after block 6: crops of the output image and of the noised image are pulled to the clean crop in the model's own hidden state",
+   "change": {
+    "selfteach": {
+     "layer": 6
+    }
+   },
+   "cost": 2.05,
+   "pass": "st_z6_w2",
+   "fail": "st_z6_out_only"
+  },
+  "st_z6_w2": {
+   "why": "Both self-teaching terms at weight 2, on top of the gain at weight 1",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0,
+     "weight_noised": 2.0
+    }
+   },
+   "cost": 2.05,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z6_out_only": {
+   "why": "Self-teaching at block 6 with the output term only (no noised pass, more steps), after both terms together failed",
+   "change": {
+    "selfteach": {
+     "layer": 6,
+     "weight_noised": 0.0
+    }
+   },
+   "cost": 1.68,
+   "pass": null,
+   "fail": "st_z6_noised_only",
+   "follower_only": true
+  },
+  "st_z6_noised_only": {
+   "why": "Self-teaching at block 6 with the noised term only (no output pass), after the output term failed",
+   "change": {
+    "selfteach": {
+     "layer": 6,
+     "weight_out": 0.0
+    }
+   },
+   "cost": 1.63,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z6_tenth": {
+   "why": "Self-teaching at block 6 with both terms at weight 0.1: a light pull",
+   "change": {
+    "selfteach": {
+     "layer": 6,
+     "weight_out": 0.1,
+     "weight_noised": 0.1
+    }
+   },
+   "cost": 2.05,
+   "pass": null,
+   "fail": null
+  },
+  "st_z3": {
+   "why": "Self-teaching at block 3, repeated on the Spark: on the 3090 it gave 123.09 against 124.57 with 10,000 steps in place of 16,000",
+   "change": {
+    "selfteach": {
+     "layer": 3
+    }
+   },
+   "cost": 1.6,
+   "pass": null,
+   "fail": null
+  },
+  "st_z3_w2": {
+   "why": "Both self-teaching terms at weight 2, on top of the gain at block 3",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0
+    }
+   },
+   "cost": 1.6,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z2": {
+   "why": "Self-teaching at block 2: a shallower and cheaper judge than block 3, so more steps in the cycle",
+   "change": {
+    "selfteach": {
+     "layer": 2
+    }
+   },
+   "cost": 1.3,
+   "pass": null,
+   "fail": null
+  },
+  "st_out_w2": {
+   "why": "Output term of self-teaching at weight 2 in place of 1",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0
+    }
+   },
+   "cost": 1.85,
+   "pass": "st_out_w4",
+   "fail": "st_out_half"
+  },
+  "st_out_w4": {
+   "why": "Output term at weight 4, on top of the gain at weight 2",
+   "change": {
+    "selfteach": {
+     "weight_out": 4.0
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_out_half": {
+   "why": "Output term at weight 0.5, after weight 2 failed",
+   "change": {
+    "selfteach": {
+     "weight_out": 0.5
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_mild_crop": {
+   "why": "Larger crops for the judge: 0.5 to 1.0 of the side in place of 0.2 to 0.9",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.5,
+     "crop_max": 1.0
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": "st_small_crop"
+  },
+  "st_small_crop": {
+   "why": "Smaller crops for the judge: 0.1 to 0.5 of the side, after the larger crops failed",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_no_selfflow_teacher": {
+   "why": "Is the self-flow teaching term still needed beside self-teaching? Teacher pass off (mixed noise stays), its compute goes to more steps",
+   "change": {
+    "selfflow": {
+     "teacher": false
+    }
+   },
+   "cost": 1.7,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w2": {
+   "why": "Self-flow teaching term at weight 2: the second winner of the 3090 loop (115.39 against 116.91), repeated on the Spark with block 6",
+   "change": {
+    "selfflow": {
+     "weight": 2.0
+    }
+   },
+   "cost": 1.85,
+   "pass": "st_flow_w4",
+   "fail": "st_flow_w4"
+  },
+  "st_flow_w4": {
+   "why": "Self-flow teaching term at weight 4 (114.38 on the 3090, 1.0 better than weight 2 but under the margin)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "cost": 1.85,
+   "pass": "st_flow_w8",
+   "fail": null,
+   "follower_only": true
+  },
+  "st_flow_w8": {
+   "why": "Self-flow teaching term at weight 8, after weight 4 gained",
+   "change": {
+    "selfflow": {
+     "weight": 8.0
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z3_base": {
+   "why": "Block 3 again (116.55 against 116.08 before): the cheaper judge, the one of the 200,000-step run",
+   "change": {
+    "selfteach": {
+     "layer": 3
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_share40": {
+   "why": "40% of the student patches at the higher noise level (level with 25% on the 3090)",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.4
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null
+  },
+  "st_teach_noisy": {
+   "why": "The self-flow teaching term counts only the noisier patches, beside self-teaching",
+   "change": {
+    "selfflow": {
+     "teach_on": "noisy"
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null
+  },
+  "st_tiny_crop": {
+   "why": "Crops of 0.05 to 0.3 of the side (0.1 to 0.5 was level here and 1 FID better on the 3090, twice)",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.05,
+     "crop_max": 0.3
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null
+  },
+  "st_inside_crop": {
+   "why": "Crops stay inside the image (overhang 0): no black border in the judge input",
+   "change": {
+    "selfteach": {
+     "overhang": 0.0
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null
+  }
+ }
+}

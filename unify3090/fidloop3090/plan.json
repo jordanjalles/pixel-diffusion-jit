@@ -1,0 +1,157 @@
+{
+ "note": "Decision tree of fid_loop.py. change = patch of the job config (merged into the parent's config). pass = next node if the FID beats the control by more than the margin (the change is kept), fail = next node if not (the change is dropped). No node adds a model parameter. follower_only = the node runs only when another node names it. A null follower = the first node of this file that has not run.",
+ "start": "teacher_clean",
+ "nodes": {
+  "teacher_clean": {
+   "why": "The teacher sees the clean image, not the image at the lower noise level: a target without noise, as in JEPA",
+   "change": {
+    "selfflow": {
+     "teacher_input": "clean"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "mask_student": {
+   "why": "Masked student on top of the clean teacher: the noisier patches are pure noise, the I-JEPA setup",
+   "change": {
+    "selfflow": {
+     "noisy_t": "mask"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "pairs_three": {
+   "why": "Teaching at three depths: blocks 2, 3 and 4 learn from blocks 5, 6 and 7",
+   "change": {
+    "selfflow": {
+     "pairs": [
+      [
+       2,
+       5
+      ],
+      [
+       3,
+       6
+      ],
+      [
+       4,
+       7
+      ]
+     ]
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "pair_deep_target": {
+   "why": "One pair with the deepest target: block 3 learns from block 8, after three pairs failed",
+   "change": {
+    "selfflow": {
+     "pairs": [
+      [
+       3,
+       8
+      ]
+     ],
+     "to": 8
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "ctx_half": {
+   "why": "SGF+ idea without new parameters: half the denoising loss on the cleaner (context) patches, so they serve the noisier patches more",
+   "change": {
+    "selfflow": {
+     "ctx_weight": 0.5
+    }
+   },
+   "pass": "ctx_zero",
+   "fail": null
+  },
+  "ctx_zero": {
+   "why": "No denoising loss on the context patches: they learn only through the noisier patches and the teaching term (SGF+ in full)",
+   "change": {
+    "selfflow": {
+     "ctx_weight": 0.0
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "ctx_double": {
+   "why": "Twice the denoising loss on the context patches: the opposite direction, after one half failed",
+   "change": {
+    "selfflow": {
+     "ctx_weight": 2.0
+    }
+   },
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "ema_teacher": {
+   "why": "Winner of the Spark loop (124.39 against 126.42), repeated on this machine: teacher pass with averaged weights, decay 0.999",
+   "change": {
+    "selfflow": {
+     "teacher": "ema"
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "no_selfflow": {
+   "why": "Sensitivity test: self-flow off (plain training, as the control run without teaching). If the FID does not rise, 16,000 steps cannot show the value of self-flow",
+   "change": {
+    "selfflow": null
+   },
+   "pass": null,
+   "fail": null
+  },
+  "teach_weight_half": {
+   "why": "Teaching term at weight 0.5: the best of the weight tests on the Spark (124.31 against 124.39), repeated here",
+   "change": {
+    "selfflow": {
+     "weight": 0.5
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "out_align_1": {
+   "why": "View alignment at the output with weight 1: the student's final image is also pulled to the averaged teacher's final image (the Spark tests weight 0.5)",
+   "change": {
+    "selfflow": {
+     "out_weight": 1.0
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "readouts_double": {
+   "why": "Double weight on the readout losses: second lowest FID of the Spark loop (124.23 against 124.39), repeated here to see if the small gain is real",
+   "change": {
+    "hparams": {
+     "pyramid_weight": 2.0
+    }
+   },
+   "pass": null,
+   "fail": null
+  },
+  "teach_half_noisy": {
+   "why": "Teaching weight 0.5 on the noisier patches only: lowest FID of the Spark loop (124.21 against 124.39), repeated here to see if the small gain is real",
+   "change": {
+    "selfflow": {
+     "weight": 0.5,
+     "teach_on": "noisy"
+    }
+   },
+   "pass": null,
+   "fail": null
+  }
+ }
+}

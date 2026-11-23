@@ -1,0 +1,17 @@
+{
+ "xm_k": 1,
+ "steps": 4000,
+ "log_every": 100,
+ "eval_every": 4000,
+ "preview_every": 4000,
+ "ckpt_every": 100000,
+ "compile": true,
+ "yield_gpu": false,
+ "save_final": false,
+ "loader_workers": 6,
+ "disk_lock": true,
+ "draft_decode": false,
+ "hparams": {
+  "SHARDS_IN_RAM": 1
+ }
+}

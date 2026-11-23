@@ -1,0 +1,20 @@
+{
+ "shape": "12x704",
+ "batch A": 128,
+ "lr": 0.0004,
+ "ms/step A": 128,
+ "steps A": 650000,
+ "images A (M)": 83.2,
+ "epochs A": 64.9,
+ "batch B": 128,
+ "ms/step B": 436,
+ "steps B": 170000,
+ "images B (M)": 21.8,
+ "epochs B": 17.0,
+ "lr 1e-5 from step": 794000,
+ "hours A": 26.5,
+ "hours B": 24.5,
+ "jobs A": 3,
+ "jobs B": 3,
+ "ckpt every A/B (steps)": "14000/4000"
+}

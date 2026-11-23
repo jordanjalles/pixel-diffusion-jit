@@ -1,0 +1,88 @@
+{
+ "steps": 820000,
+ "log_every": 100,
+ "eval_every": 2000,
+ "preview_every": 10000,
+ "ckpt_every": 4000,
+ "compile": true,
+ "yield_gpu": false,
+ "loader_workers": 6,
+ "disk_lock": false,
+ "draft_decode": true,
+ "keep_outputs": true,
+ "host": "colab-a100",
+ "ship": true,
+ "ship_gap": 75,
+ "hf_repo": "benjamin-paine/imagenet-1k-256x256",
+ "dataset": "hf256",
+ "dataset_dir": "/datasets/hf/data",
+ "dataset_size": 256,
+ "hparams": {
+  "SHARDS_IN_RAM": 1,
+  "ALLOW_PARTIAL_IMAGENET": true,
+  "IMAGE_SIZE": 256,
+  "CACHE_BATCH_SIZE": 128,
+  "pyramid_readouts": [
+   [
+    3,
+    4
+   ],
+   [
+    6,
+    8
+   ]
+  ],
+  "pyramid_weight": 1.0,
+  "emb_dim": 704,
+  "n_heads": 16,
+  "head_size": 44,
+  "num_blocks": 12,
+  "lr": 0.0004
+ },
+ "run_type": "pixel_pyramid",
+ "pyramid": true,
+ "schedule": "broad15",
+ "loss_weight": "clamp01",
+ "selfflow": {
+  "from": 3,
+  "to": 6,
+  "weight": 2.0,
+  "teacher": "ema"
+ },
+ "xm_ot": {
+  "seeds": 3
+ },
+ "cond": {
+  "classes": 1000,
+  "drop": 0.1,
+  "preview_cfg": 3.0
+ },
+ "ema": 0.999,
+ "z_snapshot": {
+  "block": 6,
+  "n": 64
+ },
+ "guard": {
+  "step": 4000,
+  "max_test": 5.0
+ },
+ "gen_eval": {
+  "every": 20000,
+  "n": 10000,
+  "steps": 16,
+  "sampler": "euler",
+  "weights": "ema",
+  "cfg": 3.0
+ },
+ "ckpt_keep": {
+  "last": 2,
+  "every": 1000000000000
+ },
+ "seed": 44,
+ "wall_s": 39600,
+ "lr_switch": {
+  "step": 794000,
+  "lr": 1e-05
+ },
+ "resume_ckpt": "DATA:init/stageB-cont16-init"
+}

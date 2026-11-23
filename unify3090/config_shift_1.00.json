@@ -1,0 +1,44 @@
+{
+ "xm_k": 1,
+ "xm_n": 1,
+ "steps": 100000,
+ "log_every": 100,
+ "eval_every": 2000,
+ "preview_every": 10000,
+ "ckpt_every": 25000,
+ "compile": true,
+ "yield_gpu": true,
+ "notebook_commit": "5eb53a0",
+ "loader_workers": 4,
+ "disk_lock": true,
+ "draft_decode": true,
+ "hparams": {
+  "SHARDS_IN_RAM": 1,
+  "num_blocks": 16,
+  "lr": 0.0001,
+  "pyramid_readouts": [
+   [
+    6,
+    4
+   ],
+   [
+    12,
+    8
+   ]
+  ],
+  "pyramid_weight": 1.0
+ },
+ "run_type": "pixel_pyramid",
+ "pyramid": true,
+ "schedule": "broad15",
+ "t_shift": 1.0,
+ "ema": 0.999,
+ "lr_switch": {
+  "step": 87500,
+  "lr": 1e-05
+ },
+ "guard": {
+  "step": 4000,
+  "max_test": 0.16
+ }
+}

@@ -1,0 +1,1 @@
+{"xm_k": 2, "xm_n": 1, "steps": 800, "log_every": 100, "eval_every": 400, "preview_every": 400, "ckpt_every": 100000, "compile": true, "yield_gpu": true}

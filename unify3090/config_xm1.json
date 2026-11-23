@@ -1,0 +1,18 @@
+{
+ "xm_k": 1,
+ "xm_n": 1,
+ "steps": 30000,
+ "log_every": 100,
+ "eval_every": 1000,
+ "preview_every": 5000,
+ "ckpt_every": 10000,
+ "compile": true,
+ "yield_gpu": true,
+ "notebook_commit": "5eb53a0",
+ "loader_workers": 4,
+ "disk_lock": true,
+ "draft_decode": true,
+ "hparams": {
+  "SHARDS_IN_RAM": 1
+ }
+}

@@ -1,0 +1,614 @@
+{
+ "note": "Round 2 of the FID loop (user, 2026-10-10): self-teaching with the model as its own judge (job cfg selfteach), 20-minute cycles, equal compute. Every run starts from the baseline checkpoint with base_change. A node trains base_steps / cost steps. change = patch of the job config. pass = next node if the FID beats the reference by more than the margin (the change is kept), fail = next node if not (the change is dropped). follower_only = runs only when another node names it. No node adds a model parameter.",
+ "base_change": {
+  "selfflow": {
+   "teacher": "ema"
+  }
+ },
+ "base_steps": 16000,
+ "start": "st_z3",
+ "nodes": {
+  "st_z3": {
+   "why": "Self-teaching, z after block 3 (cheapest): crops of the output image and of the noised image are pulled to the clean crop in the model's own hidden state",
+   "change": {
+    "selfteach": {
+     "layer": 3
+    }
+   },
+   "cost": 1.6,
+   "pass": "st_z3_w2",
+   "fail": "st_z3_out_only"
+  },
+  "st_z3_w2": {
+   "why": "Both self-teaching terms at weight 2, on top of the gain at weight 1",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0,
+     "weight_noised": 2.0
+    }
+   },
+   "cost": 1.6,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z3_out_only": {
+   "why": "Self-teaching at block 3 with the output term only (no noised pass, more steps), after both terms together failed",
+   "change": {
+    "selfteach": {
+     "layer": 3,
+     "weight_noised": 0.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z8": {
+   "why": "Self-teaching, z after the last block (8), before the un-embed: the costliest judge",
+   "change": {
+    "selfteach": {
+     "layer": 8
+    }
+   },
+   "cost": 2.36,
+   "pass": null,
+   "fail": "st_z8_out_only"
+  },
+  "st_z8_out_only": {
+   "why": "Self-teaching at the last block with the output term only, after both terms together failed",
+   "change": {
+    "selfteach": {
+     "layer": 8,
+     "weight_noised": 0.0
+    }
+   },
+   "cost": 1.88,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z1": {
+   "why": "Self-teaching at block 1: the cheapest judge, so the most steps in the cycle",
+   "change": {
+    "selfteach": {
+     "layer": 1
+    }
+   },
+   "cost": 1.2,
+   "pass": null,
+   "fail": null
+  },
+  "st_z6_out": {
+   "why": "Output term at block 6 in place of block 3: the winner of the Spark loop (116.08 against 122.52), compared with block 3 on this machine",
+   "change": {
+    "selfteach": {
+     "layer": 6
+    }
+   },
+   "cost": 1.85,
+   "pass": null,
+   "fail": null
+  },
+  "st_out_w2": {
+   "why": "Output term of self-teaching at weight 2 in place of 1",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": "st_out_half"
+  },
+  "st_out_half": {
+   "why": "Output term at weight 0.5, after weight 2 failed",
+   "change": {
+    "selfteach": {
+     "weight_out": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_z4_out": {
+   "why": "Output term at block 4: between block 3 (116.91) and block 6 (119.17 on this machine)",
+   "change": {
+    "selfteach": {
+     "layer": 4
+    }
+   },
+   "cost": 1.52,
+   "pass": null,
+   "fail": null
+  },
+  "st_wide_crop": {
+   "why": "Wider range of crop sizes for the judge: 0.1 to 1.0 of the side in place of 0.2 to 0.9",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 1.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_whole_image": {
+   "why": "No crop: the judge compares the whole output image with the whole clean image. Does the crop matter at all?",
+   "change": {
+    "selfteach": {
+     "crop_min": 1.0,
+     "crop_max": 1.0,
+     "overhang": 0.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_judge_ema": {
+   "why": "The judge holds the averaged weights of the self-flow teacher in place of the weights of the last step: a steadier target",
+   "change": {
+    "selfteach": {
+     "judge": "ema"
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_z3z6": {
+   "why": "Output term at blocks 3 and 6 together (mean of the two), one judge pass",
+   "change": {
+    "selfteach": {
+     "layers": [
+      3,
+      6
+     ]
+    }
+   },
+   "cost": 1.9,
+   "pass": null,
+   "fail": null
+  },
+  "st_no_selfflow_teacher": {
+   "why": "Is the self-flow teaching term still needed beside self-teaching? Teacher pass off (mixed noise stays), its compute goes to more steps",
+   "change": {
+    "selfflow": {
+     "teacher": false
+    }
+   },
+   "cost": 1.25,
+   "pass": null,
+   "fail": null
+  },
+  "st_small_crop": {
+   "why": "Smaller crops for the judge: 0.1 to 0.5 of the side (116.23 against 116.08 on the Spark at block 6)",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_inside_crop": {
+   "why": "Crops stay inside the image (overhang 0): no black border in the judge input",
+   "change": {
+    "selfteach": {
+     "overhang": 0.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_judge_t07": {
+   "why": "The judge sees both crops at noise level t = 0.7 (the same noise on both) in place of clean: z of the noise levels the model works at",
+   "change": {
+    "selfteach": {
+     "judge_t": 0.7
+    }
+   },
+   "cost": 1.39,
+   "pass": "st_judge_t04",
+   "fail": "st_judge_t09"
+  },
+  "st_judge_t04": {
+   "why": "Judge at t = 0.4, after t = 0.7 gained",
+   "change": {
+    "selfteach": {
+     "judge_t": 0.4
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_judge_t09": {
+   "why": "Judge at t = 0.9, a light noise, after t = 0.7 failed",
+   "change": {
+    "selfteach": {
+     "judge_t": 0.9
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_flow_w2": {
+   "why": "Self-flow teaching term at weight 2 beside self-teaching: without the teacher FID is 4.8 worse, so the term carries weight",
+   "change": {
+    "selfflow": {
+     "weight": 2.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": "st_flow_half"
+  },
+  "st_flow_half": {
+   "why": "Self-flow teaching term at weight 0.5, after weight 2 failed",
+   "change": {
+    "selfflow": {
+     "weight": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_share40": {
+   "why": "40% of the student patches at the higher noise level in place of 25%, beside self-teaching",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.4
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w4": {
+   "why": "Self-flow teaching term at weight 4, on top of the gain at weight 2 (115.39 against 116.91)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "cost": 1.39,
+   "pass": "st_flow_w8",
+   "fail": "st_flow_w3"
+  },
+  "st_flow_w8": {
+   "why": "Self-flow teaching term at weight 8, after weight 4 gained",
+   "change": {
+    "selfflow": {
+     "weight": 8.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_flow_w3": {
+   "why": "Self-flow teaching term at weight 3, after weight 4 failed",
+   "change": {
+    "selfflow": {
+     "weight": 3.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_small_crop_b": {
+   "why": "Crops of 0.1 to 0.5 of the side again, on the new base: 115.95 against 116.91 before, 1 FID better but under the margin",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": "st_tiny_crop",
+   "fail": null
+  },
+  "st_tiny_crop": {
+   "why": "Crops of 0.05 to 0.3 of the side, after the small crops gained",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.05,
+     "crop_max": 0.3
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_small_crop_share40": {
+   "why": "Two small gains together: crops 0.1 to 0.5 and 40% of the student patches at the higher noise level",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    },
+    "selfflow": {
+     "noisy_share": 0.4
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_share60": {
+   "why": "60% of the student patches at the higher noise level (40% was level with 25%)",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.6
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_teach_noisy": {
+   "why": "The self-flow teaching term counts only the noisier patches (JEPA: predict the masked part), now with the term at weight 2",
+   "change": {
+    "selfflow": {
+     "teach_on": "noisy"
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_teacher_slow": {
+   "why": "Slower averaged teacher: decay 0.9999 in place of 0.999, now with the teaching term at weight 2",
+   "change": {
+    "selfflow": {
+     "teacher_decay": 0.9999
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_ctx_half": {
+   "why": "SGF+ analog beside self-teaching: denoising loss on the cleaner (context) patches of the student at weight 0.5",
+   "change": {
+    "selfflow": {
+     "ctx_weight": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_out_w075": {
+   "why": "Output term of self-teaching at weight 0.75 with the stronger self-flow term",
+   "change": {
+    "selfteach": {
+     "weight_out": 0.75
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_w4_small_crop": {
+   "why": "Two gains of about 1 FID together: teaching term at weight 4 (114.38) and crops 0.1 to 0.5 (114.43)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    },
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": "st_w6_small_crop",
+   "fail": null
+  },
+  "st_w6_small_crop": {
+   "why": "Teaching term at weight 6 with the small crops, on top of the kept pair",
+   "change": {
+    "selfflow": {
+     "weight": 6.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "st_tiny_crop_b": {
+   "why": "Crops of 0.05 to 0.3 of the side: smaller than the 0.1 to 0.5 that gave 1 FID",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.05,
+     "crop_max": 0.3
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_02_05": {
+   "why": "Crops of 0.2 to 0.5 of the side: the small crops without the smallest ones",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.2,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w6": {
+   "why": "Self-flow teaching term at weight 6 (weight 4 gave 114.38, weight 3 gave 114.94 against 115.39)",
+   "change": {
+    "selfflow": {
+     "weight": 6.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_03_05": {
+   "why": "Crops of 0.3 to 0.5 of the side: narrower than the kept 0.2 to 0.5 (113.50 against 115.39)",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.3,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_02_04": {
+   "why": "Crops of 0.2 to 0.4 of the side",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.2,
+     "crop_max": 0.4
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_02_07": {
+   "why": "Crops of 0.2 to 0.7 of the side: between the kept 0.2 to 0.5 and the first range 0.2 to 0.9",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.2,
+     "crop_max": 0.7
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_fixed_035": {
+   "why": "One crop size, 0.35 of the side: is a range of sizes needed?",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.35,
+     "crop_max": 0.35
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w4_c": {
+   "why": "Self-flow teaching term at weight 4 on the new base (weight 6 gave 113.09 against 113.50)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w10": {
+   "why": "Self-flow teaching term at weight 10: weights 4 and 6 were each a little better than 2",
+   "change": {
+    "selfflow": {
+     "weight": 10.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_inside_b": {
+   "why": "Crops inside the image (overhang 0) with the kept small crops",
+   "change": {
+    "selfteach": {
+     "overhang": 0.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_teacher_fast": {
+   "why": "Faster averaged teacher: decay 0.99 in place of 0.999",
+   "change": {
+    "selfflow": {
+     "teacher_decay": 0.99
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_share10": {
+   "why": "10% of the student patches at the higher noise level in place of 25%",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.1
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_z2z3": {
+   "why": "Judge at blocks 2 and 3 together (mean of the two): no longer step than block 3",
+   "change": {
+    "selfteach": {
+     "layers": [
+      2,
+      3
+     ]
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_flow_w4_d": {
+   "why": "Self-flow teaching term at weight 4 on the new base (rerun: the first try was cancelled for the user's game)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  },
+  "st_crop_015_045": {
+   "why": "Crops 0.15 to 0.45 of the image side: between the kept 0.2-0.5 and the worse 0.05-0.3",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.15,
+     "crop_max": 0.45
+    }
+   },
+   "cost": 1.39,
+   "pass": null,
+   "fail": null
+  }
+ }
+}

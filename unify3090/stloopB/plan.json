@@ -1,0 +1,123 @@
+{
+ "note": "Round 3 of the FID loop (user, 2026-10-10): the baseline is the final checkpoint of the 200,000-step run with self-flow teaching (averaged teacher) and self-teaching (output term, z after block 3). Its config is the base: cost 1 = one step of that recipe. A node trains base_steps / cost steps. change = patch of the job config. pass = next node if the FID beats the reference by more than the margin (the change is kept), fail = next node if not. follower_only = runs only when another node names it. No node adds a model parameter.",
+ "base_change": {},
+ "base_steps": 15000,
+ "start": "b_flow_w2",
+ "nodes": {
+  "b_flow_w2": {
+   "why": "Self-flow teaching term at weight 2 (115.39 against 116.91 on the old baseline)",
+   "change": {
+    "selfflow": {
+     "weight": 2.0
+    }
+   },
+   "cost": 1.0,
+   "pass": "b_flow_w4",
+   "fail": "b_flow_w4"
+  },
+  "b_flow_w4": {
+   "why": "Self-flow teaching term at weight 4 (114.38 on the old baseline)",
+   "change": {
+    "selfflow": {
+     "weight": 4.0
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "b_z6": {
+   "why": "Judge at block 6 in place of block 3 (level on the old baseline, a longer step)",
+   "change": {
+    "selfteach": {
+     "layer": 6
+    }
+   },
+   "cost": 1.33,
+   "pass": null,
+   "fail": null
+  },
+  "b_out_w2": {
+   "why": "Output term of self-teaching at weight 2: the judge of this baseline was trained with the term from the start",
+   "change": {
+    "selfteach": {
+     "weight_out": 2.0
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": "b_out_half"
+  },
+  "b_out_half": {
+   "why": "Output term at weight 0.5, after weight 2 failed",
+   "change": {
+    "selfteach": {
+     "weight_out": 0.5
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "b_share40": {
+   "why": "40% of the student patches at the higher noise level in place of 25%",
+   "change": {
+    "selfflow": {
+     "noisy_share": 0.4
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null
+  },
+  "b_small_crop": {
+   "why": "Crops of 0.1 to 0.5 of the side for the judge (about 1 FID better on the old baseline, twice)",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.1,
+     "crop_max": 0.5
+    }
+   },
+   "cost": 1.0,
+   "pass": "b_tiny_crop",
+   "fail": null
+  },
+  "b_tiny_crop": {
+   "why": "Crops of 0.05 to 0.3 of the side, after the small crops gained",
+   "change": {
+    "selfteach": {
+     "crop_min": 0.05,
+     "crop_max": 0.3
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null,
+   "follower_only": true
+  },
+  "b_teach_noisy": {
+   "why": "The self-flow teaching term counts only the noisier patches (JEPA: predict the masked part)",
+   "change": {
+    "selfflow": {
+     "teach_on": "noisy"
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null
+  },
+  "b_teacher_slow": {
+   "why": "Slower averaged teacher: decay 0.9999 in place of 0.999",
+   "change": {
+    "selfflow": {
+     "teacher_decay": 0.9999
+    }
+   },
+   "cost": 1.0,
+   "pass": null,
+   "fail": null
+  }
+ }
+}

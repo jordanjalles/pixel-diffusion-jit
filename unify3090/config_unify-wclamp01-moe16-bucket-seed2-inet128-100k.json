@@ -1,0 +1,61 @@
+{
+ "xm_k": 1,
+ "xm_n": 1,
+ "steps": 100000,
+ "log_every": 100,
+ "eval_every": 2000,
+ "preview_every": 10000,
+ "ckpt_every": 25000,
+ "compile": true,
+ "yield_gpu": true,
+ "notebook_commit": "5eb53a0",
+ "loader_workers": 4,
+ "disk_lock": true,
+ "draft_decode": true,
+ "hparams": {
+  "SHARDS_IN_RAM": 1,
+  "num_blocks": 8,
+  "emb_dim": 360,
+  "n_heads": 10,
+  "head_size": 36,
+  "lr": 0.0001,
+  "pyramid_readouts": [
+   [
+    3,
+    4
+   ],
+   [
+    6,
+    8
+   ]
+  ],
+  "pyramid_weight": 1.0
+ },
+ "run_type": "pixel_pyramid",
+ "pyramid": true,
+ "schedule": "broad15",
+ "t_shift": 1.0,
+ "ema": 0.999,
+ "lr_switch": {
+  "step": 87500,
+  "lr": 1e-05
+ },
+ "guard": {
+  "step": 4000,
+  "max_test": 5.0
+ },
+ "loss_weight": "clamp01",
+ "dataset": "imagenet128",
+ "seed": 2,
+ "moe": {
+  "experts": 16,
+  "at": 50000,
+  "route": "bucket",
+  "blocks": [
+   2,
+   4,
+   6,
+   8
+  ]
+ }
+}

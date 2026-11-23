@@ -1,0 +1,1 @@
+{"workers": [2, 4, 6], "batches": 300, "warmup": 20}
